@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/beige.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+				<!-- TITLE -->
+				<section>
+					<h3>A Presentation on</h3>
+					<h1>NTRU Cryptosystem</h1>
+					<h3>by Meghraj Goswami</h3><br>
+					<small>Series on Post-Quantum Cryptography</small>
+				</section>
+
+				<!-- SECTION 1 -->
+				<section>
+					<h3>Quantum Threat</h3>
+					<ul>
+						<li>Quantum computers can factor large numbers in polynomial time</li>
+						<li>Shor's algorithm breaks RSA in hours</li>
+					</ul>
+				</section>
+
+				<section>
+					<h3>Why NTRU?</h3>
+					<ul>
+						<li>No known quantum algorithm breaks SVP</li> <!-- unlike factoring -->
+						<li>Fast polynomial convolution operations</li>
+						<li>Small keys compared to RSA 2048</li>
+						<li>Already in <a href="https://ntru.org/" target="_blank">NIST standardization process</a></li>
+					</ul>
+				</section>
+
+				<!-- SECTION 2: ABSTRACT ALGEBRA FUNDAMENTALS -->
+				<section>
+					<h2>Prerequisites:<br>Abstract Algebra</h2>
+				</section>
+
+				<section>
+					<h3>What is a Group?</h3>
+					<div class="definition">
+						<p>(G, ·): set with a binary operation</p>
+						<ol>
+							<li class="fragment"><strong>Closure:</strong> <kbd>a · b ∈ G for all a, b ∈ G</kbd></li>
+							<li class="fragment"><strong>Associativity:</strong> (a · b) · c = a · (b · c)</li>
+							<li class="fragment"><strong>Identity:</strong> ∃ e such that a · e = e · a = a</li>
+							<li class="fragment"><strong>Inverses:</strong> For each a ∈ G, ∃a<sup>-1</sup> where a · a<sup>-1</sup> = e</li>
+						</ol>
+					</div>
+					<p class="fragment"><strong>If commutative:</strong> a · b = b · a → <span class="key-point">Abelian Group</span></p>
+				</section>
+
+				<section>
+					<h3>Example: Arithmetic Modulo 5</h3>
+					<pre><code>3 + 4 ≡ 2 (mod 5)
+3 + 4 = 7, and 7 = 1·5 + 2, remainder is 2</code></pre>
+					<ul>
+						<li><strong>Closed:</strong> Sum always in {0,1,2,3,4}</li>
+						<li><strong>Associative:</strong> Addition</li>
+						<li><strong>Identity:</strong> 0 (a + 0 ≡ a)</li>
+						<li><strong>Inverse:</strong> For 3, inverse is 2 (3+2 ≡ 0 mod 5)</li>
+					</ul>
+					<p class="fragment" style="margin-top: 20px;">Abelian!</p>
+				</section>
+
+				<!-- RSA uses the group of integers modulo n under multiplication. 
+				 hard to "undo" certain operations unlike in regular integers. -->
+
+				<section>
+					<h3>What is a Ring?</h3>
+					<div class="definition">
+						<p>(R, +, ·): set with two operations</p>
+						<ol>
+							<li class="fragment">(R, +) is an abelian group</li>
+							<li class="fragment">Multiplication is associative</li>
+							<li class="fragment"><strong>Distributive law:</strong> a·(b+c) = a·b + a·c</li>
+						</ol>
+					</div>
+					<p class="fragment" style="margin-top: 20px;"><strong>Commutative ring:</strong> ab = ba for all a,b ∈ R</p>
+				</section>
+
+				<section>
+					<h3>Polynomial Rings</h3>
+					<div class="definition">
+						<p>R[x], where R is a ring.</p>
+						<p>Consists of all formal sums:</p>
+					</div>
+					<div class="math-display">
+						a<sub>0</sub> + a<sub>1</sub>x + a<sub>2</sub>x<sup>2</sup> + ... + a<sub>n</sub>x<sup>n</sup> where a<sub>i</sub> ∈ R
+					</div>
+					<div class="fragment">
+						<p><strong>Operations:</strong></p>
+						<ul>
+							<li>Addition: coefficient-wise</li>
+							<li>Multiplication: polynomial multiplication</li>
+						</ul>
+					</div>
+				</section>
+
+				<section>
+					<h3>Convolution Polynomial Rings</h3>
+					<p>Polynomial quotient rings:</p>
+					<p>$$R = \frac{\mathbb{Z}[x]}{(x^N - 1)}$$</p>
+					<p>$$R_q = \frac{(\mathbb{Z}/q\mathbb{Z})[x]}{(x^N - 1)}$$</p>
+					<p class="fragment">$x^N = 1$, so exponents reduce modulo $N$</p>
+				</section>
+
+				<section>
+					<h3>Convolution Product</h3>
+					<p>Multiplication (convolution product) $\star$:</p>
+					<p>$$a(x) \star b(x) = c(x) \text{ where } c_k = \sum_{i+j \equiv k \pmod{N}} a_i b_{k-i}$$</p>
+					<div class="fragment">
+						<p><strong>Example:</strong> With $N=5$</p>
+						<p>$(1-2x+4x^3-x^4) \star (3+4x-2x^2+5x^3+2x^4)$</p>
+						<p>$= -13 + 20x - 7x^2 + 19x^3 + 5x^4$</p>
+					</div>
+				</section>
+
+				<section>
+					<h3>Ternary Polynomials</h3>
+					<p>$$T(d_1, d_2) = \{a(x) \in R\}$$</p>
+					<p>with exactly $d_1$ coefficients equal to $1$, $d_2$ coefficients equal to $-1$, rest $0$</p>
+				</section>
+
+				<section>
+					<h3>NTRU Key Generation</h3>
+					<p>Public parameters: $(N, p, q, d)$ <span class="fragment">with $N$ prime,</span> <span class="fragment">$ \gcd(p,q) = \gcd(N,q) = 1$,</span> <span class="fragment">$q > (6d+1)p$</span></p>
+				</section>
+				<section>
+					<p><strong>Alice's private key:</strong></p>
+					<ul>
+						<li>Choose $f(x) \in T(d+1, d)$ and $g(x) \in T(d, d)$</li>
+						<li>Compute $F_q(x) = f(x)^{-1}$ in $R_q$</li>
+						<li>Compute $F_p(x) = f(x)^{-1}$ in $R_p$</li>
+					</ul>
+					<div class="fragment">
+						<p><strong>Alice's public key:</strong></p>
+						<p>$$h(x) = F_q(x) \star g(x) \text{ in } R_q$$</p>
+					</div>
+				</section>
+
+				<section>
+					<h3>NTRU Encryption - Bob</h3>
+					<p><strong>Plaintext:</strong></p><p>$m(x) \in R$ with coefficients in $[-\frac{p}{2}, \frac{p}{2}]$</p>
+					<div class="fragment">
+						<p>Random ephemeral key $r(x) \in T(d, d)$</p>
+					</div>
+					<div class="fragment">
+						<p><strong>Ciphertext:</strong></p>
+						<p>$$e(x) \equiv p \cdot r(x) \star h(x) + m(x) \pmod{q}$$</p>
+					</div>
+					<!-- <p class="fragment"><em>Note: NTRU is probabilistic - same message yields different ciphertexts</em></p> -->
+				</section>
+
+				<section>
+					<h3>NTRU Decryption - Alice</h3>
+					<p><strong>Step 1:</strong> Compute intermediate value</p>
+					<p>$$a(x) \equiv f(x) \star e(x) \pmod{q}$$</p>
+					<div class="fragment">
+						<p><strong>Step 2:</strong> Center lift $a(x)$ to $R$</p>
+					</div>
+					<div class="fragment">
+						<p><strong>Step 3:</strong> Recover plaintext</p>
+						<p>$$b(x) \equiv F_p(x) \star a(x) \pmod{p}$$</p>
+					</div>
+					<p class="fragment">Result: $b(x) = m(x)$ when $q > (6d+1)p$</p>
+				</section>
+
+				<section>
+					<h3>Why Decryption Works</h3>
+					<p>Starting from the ciphertext:</p>
+					<p class="fragment" style="font-size: 0.75em;">$$a(x) \equiv f(x) \star e(x) \equiv f(x) \star (ph(x) \star r(x) + m(x)) \pmod{q}$$</p>
+					<p class="fragment" style="font-size: 0.75em;">$$\equiv pf(x) \star F_q(x) \star g(x) \star r(x) + f(x) \star m(x) \pmod{q}$$</p>
+					<p class="fragment" style="font-size: 0.75em;">$$\equiv pg(x) \star r(x) + f(x) \star m(x) \pmod{q}$$</p>
+				</section>
+
+				<section>
+				<h3>Why Decryption Works (2)</h3>
+				<p style="font-size: 0.85em;">When $q > (6d+1)p$, coefficients are small enough that:</p>
+				<p style="font-size: 0.8em;">$$a(x) = pg(x) \star r(x) + f(x) \star m(x) \text{ exactly in } R$$</p>
+				<div class="fragment">
+					<p style="font-size: 0.85em;">Therefore:</p>
+					<p style="font-size: 0.75em;">$$b(x) \equiv F_p(x) \star a(x) \equiv F_p(x) \star f(x) \star m(x) \equiv m(x) \pmod{p}$$</p>
+				</div>
+				</section>
+
+				<section>
+					<h3>Example: Parameters</h3>
+					<p>$(N, p, q, d) = (7, 3, 41, 2)$</p>
+					<div class="fragment">
+						<p><strong>Alice's private key:</strong></p>
+						<p style="font-size: 0.85em;">$f(x) = x^6 - x^4 + x^3 + x^2 - 1$</p>
+						<p style="font-size: 0.85em;">$g(x) = x^6 + x^4 - x^2 - x$</p>
+						<p style="font-size: 0.85em;">$F_p(x) = x^6 + 2x^5+x^3+x^2+x+1$</p>
+						<p style="font-size: 0.85em;">$F_q(x) = 8x^6 + 26x^5 + 31x^4 + 21x^3 + 40x^2 + 2x + 37$</p>
+					</div>
+				</section>
+				<section>
+					<div>
+						<p><strong>Public key:</strong></p>
+						<p style="font-size: 0.8em;">$h(x) = F_q(x) \star g(x)$</p>
+						<p style="font-size: 0.8em;">$= 20x^6 + 40x^5 + 2x^4 + 38x^3 + 8x^2 + 26x + 30$</p>
+					</div>
+				</section>
+
+				<section>
+				<h3>Example: Encryption</h3>
+				<p><strong>Bob's message:</strong></p>
+				<p style="font-size: 0.85em;">$m(x) = -x^5 + x^3 + x^2 - x + 1$</p>
+				<p class="fragment"><strong>Ephemeral key:</strong></p>
+				<p class="fragment" style="font-size: 0.85em;">$r(x) = x^6 - x^5 + x - 1$</p>
+				<div class="fragment">
+					<p><strong>Ciphertext:</strong></p>
+					<p style="font-size: 0.8em;">$e(x) = 31x^6 + 19x^5 + 4x^4 + 2x^3 + 40x^2 + 3x + 25$</p>
+				</div>
+				</section>
+
+				<section>
+					<h3>Example: Decryption</h3>
+					<p><strong>Alice computes:</strong></p>
+					<p style="font-size: 0.75em;">$f(x) \star e(x) \equiv x^6 + 10x^5 + 33x^4 + 40x^3 + 40x^2 + x + 40 \pmod{41}$</p>
+					<div class="fragment">
+						<p style="font-size: 0.9em;">Center lift mod ($q = 41$), coeffs. $\in (-20.5, 20.5]$</p>
+						<p style="font-size: 0.75em;">$x^6+10x^5-8x^4-x^3-x^2+x-1$</p>
+					</div>
+				</section>
+				<section>
+					<p><strong>Continuing,</strong></p>
+					<p style="font-size: 0.75em;">$F_p(x) \star a(x) \equiv -x^5 + x^3 + x^2 - x + 1 \pmod{3}$</p>
+					<p class="fragment" style="font-size: 0.75em;"><em>Original message!</em></p>
+				</section>
+
+					<section>
+					<h3>Breaking NTRU</h3>
+					<p>NTRU Key Recovery Problem</p>
+					<div class="fragment">
+						<p><strong>Given:</strong> Public key $h(x)$ with random-looking coefficients</p>
+						<p><strong>Find:</strong> Ternary polynomials $f(x), g(x)$ such that</p>
+						<p>$$f(x) \star h(x) \equiv g(x) \pmod{q}$$</p>
+					</div>
+					<!-- <p class="fragment"><em>Hidden relationship with small coefficients!</em></p> -->
+					</section>
+
+					<section>
+					<h3>Brute Force Attack</h3>
+					<p>Number of ternary polynomials in $T(d_1, d_2)$:</p>
+					<p style="font-size: 0.75em;">$$\#T(d_1, d_2) = \binom{N}{d_1}\binom{N-d_1}{d_2} = \frac{N!}{d_1! \cdot d_2! \cdot (N-d_1-d_2)!}$$</p>
+					<div class="fragment" style="font-size: 0.75em;">
+						<p><strong>Example:</strong> $(N, p, q, d) = (251, 3, 257, 83)$</p>
+						<p>Expected trials: $\frac{\#T(84,83)}{251} \approx 2^{381.6}$</p>
+					</div>
+					<p class="fragment" style="font-size: 0.75em;">Collision attack (sqrt) $\approx 2^{190.8}$ checks</p>
+					<p class="fragment" style="font-size: 0.75em;"><em>Still computationally infeasible!</em></p>
+					</section>
+
+				<section>
+					<h2>End!</h2>
+				</section>
+
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script src="plugin/math/math.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealMath.KaTeX ]
+			});
+		</script>
+	</body>
+</html>
