@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>NTRU Cryptosystem</title>
 
 		<link rel="stylesheet" href="dist/reset.css">
 		<link rel="stylesheet" href="dist/reveal.css">
@@ -12,6 +12,8 @@
 
 		<!-- Theme used for syntax highlighted code -->
 		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+
+		<link type="image/png" sizes="96x96" rel="icon" href="fav.png">
 	</head>
 	<body>
 		<div class="reveal">
@@ -35,11 +37,16 @@
 				</section>
 
 				<section>
+					<h3>NTRU</h3>
+					<span class="fragment" data-fragment-index="4">n<sup>th</sup> degree truncated</span> <span class="fragment" data-fragment-index="2">polynomial</span> <span data-fragment-index="1">ring</span> <span class="fragment" data-fragment-index="3">unit</span>
+				</section>
+
+				<section>
 					<h3>Why NTRU?</h3>
 					<ul>
-						<li>No known quantum algorithm breaks SVP</li> <!-- unlike factoring -->
-						<li>Fast polynomial convolution operations</li>
-						<li>Small keys compared to RSA 2048</li>
+						<li>No known quantum algorithm</li> <!-- unlike factoring -->
+						<li>Fast polynomial operations</li>
+						<li>Small keys compared to RSA</li>
 						<li>Already in <a href="https://ntru.org/" target="_blank">NIST standardization process</a></li>
 					</ul>
 				</section>
@@ -64,14 +71,14 @@
 				</section>
 
 				<section>
-					<h3>Example: Arithmetic Modulo 5</h3>
-					<pre><code>3 + 4 ≡ 2 (mod 5)
-3 + 4 = 7, and 7 = 1·5 + 2, remainder is 2</code></pre>
+					<h3>Example: Clock (Addition Modulo 12)</h3>
+					<pre><code>10 + 4 ≡ 2 (mod 12)
+10 + 4 = 14, and 14 = 1·12 + 2, remainder is 2</code></pre>
 					<ul>
-						<li><strong>Closed:</strong> Sum always in {0,1,2,3,4}</li>
+						<li><strong>Closed:</strong> Sum always in {0,1,2,3,4,5,6,7,8,9,10,11}</li>
 						<li><strong>Associative:</strong> Addition</li>
 						<li><strong>Identity:</strong> 0 (a + 0 ≡ a)</li>
-						<li><strong>Inverse:</strong> For 3, inverse is 2 (3+2 ≡ 0 mod 5)</li>
+						<li><strong>Inverse:</strong> For 3, inverse is 9 (3+9 ≡ 0 mod 12)</li>
 					</ul>
 					<p class="fragment" style="margin-top: 20px;">Abelian!</p>
 				</section>
@@ -90,6 +97,7 @@
 						</ol>
 					</div>
 					<p class="fragment" style="margin-top: 20px;"><strong>Commutative ring:</strong> ab = ba for all a,b ∈ R</p>
+					<p class="fragment"><strong>Field:</strong>Commutative, unit</p>
 				</section>
 
 				<section>
@@ -103,16 +111,13 @@
 					</div>
 					<div class="fragment">
 						<p><strong>Operations:</strong></p>
-						<ul>
-							<li>Addition: coefficient-wise</li>
-							<li>Multiplication: polynomial multiplication</li>
-						</ul>
+						Addition & Multiplication
 					</div>
 				</section>
 
 				<section>
 					<h3>Convolution Polynomial Rings</h3>
-					<p>Polynomial quotient rings:</p>
+					<!-- <p>Polynomial quotient rings:</p> -->
 					<p>$$R = \frac{\mathbb{Z}[x]}{(x^N - 1)}$$</p>
 					<p>$$R_q = \frac{(\mathbb{Z}/q\mathbb{Z})[x]}{(x^N - 1)}$$</p>
 					<p class="fragment">$x^N = 1$, so exponents reduce modulo $N$</p>
@@ -176,7 +181,7 @@
 						<p><strong>Step 3:</strong> Recover plaintext</p>
 						<p>$$b(x) \equiv F_p(x) \star a(x) \pmod{p}$$</p>
 					</div>
-					<p class="fragment">Result: $b(x) = m(x)$ when $q > (6d+1)p$</p>
+					<p class="fragment">Result: $b(x) = m(x)$</p>
 				</section>
 
 				<section>
