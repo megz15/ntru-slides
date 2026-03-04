@@ -23,7 +23,7 @@
 \lhead{NTRU Cryptosystem}
 \cfoot{\thepage}
 
-\hypersetup{colorlinks=true, linkcolor=blue}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=magenta}
 
 \begin{document}
 \begin{titlepage}
@@ -47,7 +47,7 @@
     \begin{tabular}{@{} l l l @{}}
         \large \textbf{Shashwat Agrawal}  & \large -- & \large 2024ADPS0197H \\[4pt]
         \large \textbf{Meghraj Goswami} & \large -- & \large 2022A2B41869H \\[4pt]
-        \large \textbf{Add your names}  & \large -- & \large 202XYYZZ0000H \\[4pt]
+        \large \textbf{R Revanth Kanna} & \large -- & \large 2022B4AA0926H \\[4pt]
     \end{tabular}
     
     \vspace{1.2cm}
@@ -64,7 +64,7 @@
 
     \vspace{0.4cm}
 
-    \large \textbf{MATH F366: LABORATORY PROJECT}
+    \large \textbf{MATH F366 / F376}
 
     \vspace{1.2cm}
 
@@ -85,6 +85,65 @@
 
 \end{titlepage}
 \tableofcontents
+\newpage
+
+% --------------------------------------------------------------------
+
+\part{Basics of a Lattice -- R Revanth Kanna}
+
+\section{Introduction to Lattices}
+
+\subsection{Definition and Basis}
+A lattice $L$ in $\mathbb{R}^{n}$ is the set of all integer linear combinations of $m$ linearly independent vectors $B=\{v_{1},v_{2},...,v_{m}\}$ in $\mathbb{R}^{n}$ (and where $m\le n)$. The set $B$ is called a basis of $L$, and we write $L=L(B)$. The dimension of $L$ is $n$, and the rank of $L$ is $m$. We will henceforth assume that the basis vectors $v_{1},v_{2},...,v_{m}$ are in $\mathbb{Z}^{n}$. Thus, $L=\{x_{1}v_{1}+x_{2}v_{2}+\cdot\cdot\cdot+x_{m}v_{m}:x_{1},x_{2},...,x_{m}\in\mathbb{Z}\}\subseteq\mathbb{Z}^{n}$. $L$ is called an integer lattice.
+
+Let $B$ be the $n\times m$ matrix whose columns are the basis vectors $v_{1},...,v_{m}$. Then $L=\{Bx:x\in\mathbb{Z}^{m}\}$.
+
+\subsection{Full-Rank Lattice}
+A full-rank lattice $L$ in $\mathbb{R}^{n}$ is a lattice in $\mathbb{R}^{n}$ of rank $n$. Note that a basis $B=\{v_{1},v_{2},...,v_{n}\}$ for a full-rank lattice in $\mathbb{R}^{n}$ is also a basis for the vector space $\mathbb{R}^{n}$. Henceforth, unless otherwise stated, all lattices and sublattices will be full-rank (and integer).
+
+\textbf{Example 1 (Small Lattice):}
+Let $n=2$ and $B_{1}=\{(1,0),(0,1)\}$. Then $L_{1}=L(B_{1})=\{B_{1}x:x\in\mathbb{Z}^{2}\}$, where
+$$B_{1}=\begin{bmatrix}1&0\\ 0&1\end{bmatrix}$$. Thus, $L_{1}=\mathbb{Z}^{n}$.
+
+\subsection{Fundamental Parallelepiped}
+Let $L=L(B)$ be a lattice in $\mathbb{R}^{n}$, where $B=\{v_{1},v_{2},...,v_{n}\}$. The fundamental parallelepiped of $L$ is $P(B)=\{a_{1}v_{1}+a_{2}v_{2}+\cdot\cdot\cdot+a_{n}v_{n}:a_{i}\in[0,1)\}$. Equivalently, $P(B)=\{Bx:x\in[0,1)^{n}\}$. $P(B)$ can be used to partition $\mathbb{R}^{n}$ into non-overlapping regions.
+
+\subsection{Sublattices}
+Let $L$ and $L'$ be lattices in $\mathbb{R}^{n}$. Then $L'$ is a sublattice of $L$ if $L^{\prime}\subseteq L$.
+
+\textbf{Example 2 (Sublattice):}
+Let $n=2$ and $B_{2}=\{(2,0),(0,1)\}$. Then $L_{2}=L(B_{2})=\{B_{2}x:x\in\mathbb{Z}^{2}\}$, where 
+$$B_{2}=\begin{bmatrix}2&0\\ 0&1\end{bmatrix}$$. $L_{2}$ a sublattice of $L_{1}$. $L_{2}\ne L_{1}$ since $(1,0)\in L_{1}$, but $(1,0)=\frac{1}{2}\cdot(2,0)+0\cdot(0,1)\notin L_{2}$.
+
+\subsection{Equivalence of Bases}
+$L_{2}=L(\{(2,0),(0,1)\})$ and $L_{3}=L(\{(-2,-2),(4,3)\})$ are the same lattice, but described using different bases. The basis $B_{2}=\{(2,0),(0,1)\}$ is "nicer" than the basis $B_{3}=\{(-2,-2), (4,3)\}$ since the vectors in $B_{2}$ are "shorter" by Euclidean and "orthogonal" to each other.
+
+\begin{theorem}[Characterization of lattice bases]
+Let $L=L(B_{1})$ be an $n$-dimensional (integer) lattice. Then an $n\times n$ integer matrix $B_{2}$ is also a basis for $L$ if and only if $B_{1}=B_{2}U$, where $U$ is an $n\times n$ matrix with integer entries and with $\det(U)=\pm1$. Such a matrix $U$ is called unimodular.
+\end{theorem}
+\begin{proof}
+($\Rightarrow$) Suppose that $B_{1}$ and $B_{2}$ are both bases for $L\subseteq\mathbb{R}^{n}$. Since $B_{1}$ is a basis for $L$, and since the vectors in $B_{2}$ are in $L$, we can write $B_{2}=B_{1}U$ for some invertible matrix $U\in\mathbb{Z}^{n\times n}$. Similarly, we can write $B_{1}=B_{2}V$ for some invertible matrix $V\in\mathbb{Z}^{n\times n}$. Now, $B_{1}=B_{2}V=(B_{1}U)V=B_{1}(UV)$. Since $B_{1}$ is invertible, we have $UV=I_{n}$. Thus, $\det(U)\det(V)=1$, and hence $\det(U)=\pm1$ and $\det(V)=\pm1$.
+
+($\Leftarrow$) Conversely, assume $B_{2}=B_{1}U$ for some unimodular matrix $U \in \mathbb{Z}^{n \times n}$ with $\det(U)=\pm1$. Because $U$ has integer entries, any integer linear combination of the columns of $B_2$ is also an integer linear combination of the columns of $B_1$, giving $L(B_{2}) \subseteq L(B_{1})$. Because $\det(U)=\pm1$, its inverse $U^{-1}$ also has integer entries. From $B_{1}=B_{2}U^{-1}$, it symmetrically follows that $L(B_{1}) \subseteq L(B_{2})$. Therefore, $L(B_{1}) = L(B_{2})$.
+\end{proof}
+
+\subsection{Volume of a Lattice}
+Let $L=L(B)$ be a lattice. The volume of $L$ is $vol(L)=|\det(B)|$. The volume of a lattice is the "volume" of the fundamental parallelepiped of the lattice.
+
+\begin{theorem}[Volume is invariant of basis]
+The volume is an invariant of $L$, i.e., it doesn't depend on the basis $B$ chosen for $L$.
+\end{theorem}
+\begin{proof}
+Let $B_{1}$ and $B_{2}$ be two bases for the same lattice $L$. By the characterization of lattice bases, $B_{2}=B_{1}U$ for some unimodular matrix $U$ with $\det(U)=\pm1$. The volume generated by $B_{2}$ is $vol(L(B_{2})) = |\det(B_{2})| = |\det(B_{1}U)|$. Since the determinant of a product is the product of determinants, this equals $|\det(B_{1})\det(U)| = |\det(B_{1})(\pm1)| = |\det(B_{1})| = vol(L(B_{1}))$. Thus, the volume is invariant.
+\end{proof}
+
+\begin{theorem}[Volume of a Sublattice]
+Suppose that $L_{1}\subseteq L_{2}$. Then $vol(L_{1})\ge vol(L_{2})$.
+\end{theorem}
+\begin{proof}
+Let $B_{1}$ be a basis for $L_{1}$ and $B_{2}$ be a basis for $L_{2}$. Because $L_{1}\subseteq L_{2}$, the basis vectors of $B_{1}$ must belong to $L_{2}$. Therefore, there exists an integer matrix $M$ such that $B_{1}=B_{2}M$. The volume of $L_{1}$ is $vol(L_{1}) = |\det(B_{1})| = |\det(B_{2}M)| = |\det(B_{2})||\det(M)|$. This simplifies to $vol(L_{2})|\det(M)|$. Because $M$ is an integer matrix for full-rank lattices, its determinant is a non-zero integer, meaning $|\det(M)| \ge 1$. Consequently, $vol(L_{1}) \ge vol(L_{2})$.
+\end{proof}
+
 \newpage
 
 % --------------------------------------------------------------------
@@ -493,6 +552,58 @@ correctly, so the effective search space is $\#T(d_1,d_2) / N$.
     root, requiring $\approx 2^{190.8}$ operations---still completely infeasible.
 \end{example}
 
+\section{NTRU as a Lattice Cryptosystem (Contribution by R Revanth Kanna)}
+
+While NTRU is defined using polynomial rings, its underlying security relies heavily on lattice problems. Specifically, key recovery can be modeled as a Shortest Vector Problem (SVP), and plaintext recovery can be modeled as a Closest Vector Problem (CVP).
+
+\subsection{The NTRU Lattice}
+Let $\mathbf{h}(x)$ be an NTRU public key. The \textbf{NTRU lattice} $L_{\mathbf{h}}^{\text{NTRU}}$ associated with $\mathbf{h}(x)$ is a $2N$-dimensional lattice spanned by the rows of the $2N \times 2N$ matrix $M_{\mathbf{h}}^{\text{NTRU}}$. It is convenient to express this matrix in block form:
+\[
+M_{\mathbf{h}}^{\text{NTRU}} = \begin{pmatrix} I & \mathbf{h} \\ 0 & qI \end{pmatrix}
+\]
+where $I$ is the $N \times N$ identity matrix, $0$ is the $N \times N$ zero matrix, and $\mathbf{h}$ represents the circulant matrix formed by the cyclical permutations of the coefficients of $\mathbf{h}(x)$.
+
+\subsection{Key Recovery as a Shortest Vector Problem (SVP)}
+The private key in NTRU consists of two "small" polynomials $\mathbf{f}(x)$ and $\mathbf{g}(x)$ such that $\mathbf{f} \star \mathbf{h} \equiv \mathbf{g} \pmod q$. This congruence implies there exists some polynomial $\mathbf{u}(x)$ such that:
+\[
+\mathbf{f} \star \mathbf{h} = \mathbf{g} + q\mathbf{u}
+\]
+
+If we consider the vector $(\mathbf{f}, -\mathbf{u})$ and multiply it by the NTRU basis matrix, we get:
+\[
+(\mathbf{f}, -\mathbf{u}) \begin{pmatrix} I & \mathbf{h} \\ 0 & qI \end{pmatrix} = (\mathbf{f}, \mathbf{f} \star \mathbf{h} - q\mathbf{u}) = (\mathbf{f}, \mathbf{g})
+\]
+This proves that the vector $(\mathbf{f}, \mathbf{g})$ is a point in the lattice $L_{\mathbf{h}}^{\text{NTRU}}$. Because $\mathbf{f}$ and $\mathbf{g}$ are chosen to have very small coefficients (mostly $-1, 0, 1$), the vector $(\mathbf{f}, \mathbf{g})$ is unusually short compared to the predictions of the Gaussian heuristic for this lattice. Thus, finding the private key is equivalent to solving the SVP in $L_{\mathbf{h}}^{\text{NTRU}}$.
+
+\subsection{Message Recovery as a Closest Vector Problem (CVP)}
+Message recovery in NTRU can similarly be formulated as a CVP. Let $\mathbf{e} \equiv p\mathbf{r} \star \mathbf{h} + \mathbf{m} \pmod q$ be a ciphertext. 
+
+\textbf{Claim 1:} The vector $(p\mathbf{r}, \mathbf{e} - \mathbf{m})$ is in $L_{\mathbf{h}}^{\text{NTRU}}$.
+\begin{proof}
+From the encryption equation, there exists a polynomial $\mathbf{u}$ such that $p\mathbf{r} \star \mathbf{h} + \mathbf{m} = \mathbf{e} + q\mathbf{u}$, which rearranges to $p\mathbf{r} \star \mathbf{h} - q\mathbf{u} = \mathbf{e} - \mathbf{m}$. 
+By multiplying the vector $(p\mathbf{r}, -\mathbf{u})$ by the NTRU matrix:
+\[
+(p\mathbf{r}, -\mathbf{u}) \begin{pmatrix} I & \mathbf{h} \\ 0 & qI \end{pmatrix} = (p\mathbf{r}, p\mathbf{r} \star \mathbf{h} - q\mathbf{u}) = (p\mathbf{r}, \mathbf{e} - \mathbf{m})
+\]
+Since it is a linear combination of the rows of the basis matrix, it is in the lattice.
+\end{proof}
+
+\textbf{Claim 2:} $(p\mathbf{r}, \mathbf{e} - \mathbf{m})$ is almost certainly the closest lattice vector to the known vector $(0, \mathbf{e})$.
+\begin{proof}
+The distance between our target $\mathbf{t} = (0, \mathbf{e})$ and the lattice vector $\mathbf{v} = (p\mathbf{r}, \mathbf{e} - \mathbf{m})$ is:
+\[
+||\mathbf{v} - \mathbf{t}|| = ||(p\mathbf{r}, -\mathbf{m})||
+\]
+Assuming standard parameters where $\mathbf{r}$ and $\mathbf{m}$ have approximately $d \approx N/3$ non-zero coefficients, the length of this vector is roughly $\sqrt{\frac{2}{3}N(p^2 + 1)}$.
+Conversely, the Gaussian heuristic predicts the shortest distance between random points in this lattice to be $\approx 0.484N$. Because the distance to $(p\mathbf{r}, \mathbf{e}-\mathbf{m})$ scales with $\sqrt{N}$ rather than $N$, it is significantly closer than any random lattice point. Hence, solving CVP yields $\mathbf{m}$.
+\end{proof}
+
+\textbf{Optimizing the CVP:} We can reduce the lattice-to-target distance without affecting the determinant by using a modified NTRU lattice:
+\[
+M_{\text{mod}} = \begin{pmatrix} I & p\mathbf{h} \\ 0 & qI \end{pmatrix}
+\]
+For this modified lattice, using the target $(0, \mathbf{e})$, the closest lattice vector becomes $(\mathbf{r}, \mathbf{e} - \mathbf{m})$. The distance is now $||(\mathbf{r}, -\mathbf{m})|| = \sqrt{||\mathbf{r}||^2 + ||\mathbf{m}||^2}$. This removes the $p^2$ factor from the distance, making the vector even shorter relative to the lattice density, thereby making the CVP significantly easier for lattice reduction algorithms to solve.
+
 \section{Conclusion}
 
 NTRU is a mature, well-studied post-quantum cryptosystem. Its algebraic
@@ -501,11 +612,6 @@ structure, and its reliance on lattice hardness gives resilience against both
 classical and quantum adversaries. Its combination of small key sizes, fast
 operations, and strong security evidence makes it one of the most practical
 post-quantum proposals available today.
-
-\bigskip
-\noindent\textit{This section forms part of a group report on Post-Quantum
-Cryptography. The initial content was developed from a presentation by
-Meghraj Goswami.}
 
 \begin{thebibliography}{9}
 
