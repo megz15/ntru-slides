@@ -1,0 +1,407 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathcal{R}}
+
+\setlength{\headheight}{15pt}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Post-Quantum Cryptography}
+\lhead{NTRU Cryptosystem}
+\cfoot{\thepage}
+
+\hypersetup{colorlinks=true, linkcolor=blue}
+
+\begin{document}
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+    \large A Mid-Semester Report On
+    \vspace{0.5cm}
+
+    \LARGE \textbf{Lattice Based Post-Quantum Cryptography}
+    
+    \vspace{0.5cm}
+    
+    % \Large \textbf{NTRU Cryptosystem}
+
+    % \vspace{1cm}
+
+    \normalsize By
+
+    \vspace{0.8cm}
+
+    \begin{tabular}{@{} l l l @{}}
+        \large \textbf{Meghraj Goswami} & \large -- & \large 2022A2B41869H \\[4pt]
+        \large \textbf{Add your names}  & \large -- & \large 202XYYZZ0000H \\
+    \end{tabular}
+    
+    \vspace{1.2cm}
+
+    \large Under the supervision of
+
+    \vspace{0.4cm}
+
+    \large \textbf{Prof.\ Sabyasachi Dey}
+
+    \vspace{1cm}
+
+    \large Submitted in Partial Fulfillment of the Requirements of
+
+    \vspace{0.4cm}
+
+    \large \textbf{MATH F366: LABORATORY PROJECT}
+
+    \vspace{1.2cm}
+
+    \includegraphics[width=0.28\textwidth]{bits-logo.png}
+
+    \vspace{1.2cm}
+
+    \large \textbf{BIRLA INSTITUTE OF TECHNOLOGY AND SCIENCE\\
+    PILANI (RAJASTHAN)}
+
+    \vspace{0.4cm}
+
+    \large \textbf{HYDERABAD CAMPUS}
+
+    \vspace{0.6cm}
+
+    (March 2026)
+
+\end{titlepage}
+\tableofcontents
+\newpage
+
+\part{NTRU Cryptosystem -- Meghraj Goswami}
+
+\section{Introduction}
+
+The rapid advancement of quantum computing poses a threat to modern cryptographic infrastructure. Shor's algorithm demonstrates that a quantum computer can factor large integers and compute discrete logarithms in polynomial time---$O((\log n)^3)$---completely breaking RSA and Elliptic Curve Cryptography (ECC) at any practical key size in a short time frame~\cite{shor94}.\\
+
+In response, the cryptographic community has shifted towards \textbf{Post-Quantum Cryptography (PQC)}, algorithms that remain secure even against quantum adversaries. The \textbf{NTRU} cryptosystem ($N$-th degree Truncated polynomial Ring Unit), introduced by Hoffstein, Pipher, and Silverman in 1996~\cite{ntru96}, is one of the oldest and most analysed PQC proposals. Its security rests on the hardness of the Shortest Vector Problem (SVP) in certain lattices, for which no efficient quantum algorithm is known as of yet.
+
+Key advantages of NTRU over RSA and ECC\:
+\begin{itemize}
+    \item No known quantum speedup for the underlying lattice problem.
+    \item Fast polynomial operations.
+    \item Compact keys: public keys are approximately 700 bytes at the 128-bit security level, versus several kilobytes for RSA at equivalent security.
+    \item NTRU has been a prominent fixture in the NIST PQC standardization process.\cite{nistpqc}
+\end{itemize}
+
+\section{Mathematical Prerequisites}
+
+\subsection{Groups}
+
+\begin{definition}[Group]
+    A \textbf{group} is a pair $(G, \cdot)$ where $G$ is a set and
+    $\cdot : G \times G \to G$ is a binary operation satisfying:
+    \begin{enumerate}
+        \item \textbf{Closure:} $a \cdot b \in G$ for all $a, b \in G$.
+        \item \textbf{Associativity:} $(a \cdot b) \cdot c = a \cdot (b \cdot c)$.
+        \item \textbf{Identity:} $\exists\, e \in G$ such that $a \cdot e = e \cdot a = a$.
+        \item \textbf{Inverses:} For each $a \in G$, $\exists\, a^{-1} \in G$
+              with $a \cdot a^{-1} = e$.
+    \end{enumerate}
+    If additionally $a \cdot b = b \cdot a$ for all $a, b \in G$, the group is
+    called \textbf{abelian}.
+\end{definition}
+
+\begin{example}[Clock arithmetic $(\Z/12\Z,\, +)$]
+    Integers modulo 12 under addition: $10 + 4 \equiv 2 \pmod{12}$.\\
+    The identity is $0$; the inverse of $3$ is $9$ since $3 + 9 \equiv 0$.
+    This is an abelian group.
+\end{example}
+
+\subsection{Rings and Fields}
+
+\begin{definition}[Ring]
+    A \textbf{ring} is a triplet $(R, +, \cdot)$ where $(R, +)$ is an abelian group, multiplication is associative, and multiplication distributes over addition. A ring is \textbf{commutative} if $ab = ba$ for all $a, b \in R$.\\
+    
+    A \textbf{field} is a commutative ring where every nonzero element has a multiplicative inverse.
+\end{definition}
+
+\begin{example}
+    $\Z$, $\Z/n\Z$, $\mathbb{Q}$, and $\mathbb{R}$ are rings. $\mathbb{Q}$ and $\mathbb{R}$ are fields; $\Z$ is not (the element $2$ has no multiplicative inverse in $\Z$).
+\end{example}
+
+\subsection{Polynomial Rings}
+
+\begin{definition}[Polynomial Ring]
+    Let $R$ be a commutative ring. The polynomial ring $R[x]$ consists of all formal sums $a_0 + a_1 x + \cdots + a_n x^n$ where $a_i \in R$, under coefficient-wise addition and standard polynomial multiplication.
+\end{definition}
+
+\subsection{Convolution Polynomial Rings}
+
+NTRU operates in quotient rings of the following form. Fix a positive integer $N$ and define:
+\[
+    \R = \frac{\Z[x]}{(x^N - 1)}, \qquad
+    \R_q = \frac{(\Z/q\Z)[x]}{(x^N - 1)}, \qquad
+    \R_p = \frac{(\Z/p\Z)[x]}{(x^N - 1)}.
+\]
+The ideal $(x^N - 1)$ enforces $x^N = 1$, so all exponents reduce modulo $N$, and every element can be represented as a polynomial of degree at most $N-1$. Meanwhile, the coefficients are taken modulo $q$ or $p$ in $\R_q$ and $\R_p$ respectively.\\
+
+Multiplication in these rings is the \textbf{convolution product} $\star$:
+\[
+    c(x) = a(x) \star b(x), \quad c_k = \sum_{\substack{i+j \equiv k \\ \pmod{N}}} a_i b_j.
+\]
+The wrap-around of higher-degree terms is what gives this product a `cyclic' character.
+
+\begin{example}[Convolution product with $N = 5$]
+    Let $a(x) = 1 - 2x + 4x^3 - x^4$ and $b(x) = 3 + 4x - 2x^2 + 5x^3 + 2x^4$.
+    Computing coefficient by coefficient using $x^5 = 1$:
+    \[
+        a(x) \star b(x) = -13 + 20x - 7x^2 + 19x^3 + 5x^4.
+    \]
+\end{example}
+
+\subsection{Ternary Polynomials}
+
+\begin{definition}[Ternary polynomial set]
+    For non-negative integers $d_1, d_2$ with $d_1 + d_2 \le N$,
+    \[
+        T(d_1, d_2) = \bigl\{ a(x) \in \R \mid
+            \text{exactly } d_1 \text{ coefficients equal } +1,\;
+            d_2 \text{ equal } -1,\; \text{rest } 0 \bigr\}.
+    \]
+\end{definition}
+
+These sparse polynomials have small coefficients. Private keys are chosen from $T(d_1, d_2)$ precisely because small coefficients make decryption work (see Section~\ref{sec:correctness}) and make exhaustive search difficult (see Section~\ref{sec:security}).
+
+\subsection{Polynomial Inversion}
+
+Key generation requires computing $f(x)^{-1}$ modulo both $q$ and $p$.
+A polynomial $F_q(x)$ is an inverse of $f(x)$ in $\R_q$ if
+\[
+    f(x) \star F_q(x) \equiv 1 \pmod{q, \, x^N - 1}.
+\]
+When $N$ and $q$ are both prime, the inverse exists if and only if
+$\gcd(f(x),\, x^N - 1) = 1$ in $(\Z/q\Z)[x]$, and can be computed using the
+\textbf{extended Euclidean algorithm} for polynomials. If $f$ has no inverse,
+a new $f$ is chosen.
+
+\section{Cryptosystem}
+
+\subsection{Public Parameters}
+
+The system is set up with public parameters $(N, p, q, d)$ satisfying:
+\begin{itemize}
+    \item $N$ is prime.
+    \item $\gcd(p, q) = 1$ and $\gcd(N, q) = 1$.
+    \item $q > (6d+1)p$ \quad (required for correct decryption; see
+          Theorem~\ref{thm:correctness}).
+\end{itemize}
+
+\subsection{Key Generation}
+
+Alice generates her keys as follows:
+\begin{enumerate}
+    \item Choose random private polynomials $f(x) \in T(d+1, d)$ and
+          $g(x) \in T(d, d)$.
+    \item Compute inverses of $f$ in both quotient rings:
+          \[
+              F_q(x) = f(x)^{-1} \text{ in } \R_q, \qquad
+              F_p(x) = f(x)^{-1} \text{ in } \R_p.
+          \]
+    \item Compute the \textbf{public key}:
+          \[
+              h(x) \equiv F_q(x) \star g(x) \pmod{q}.
+          \]
+\end{enumerate}
+\textbf{Private key:} $(f,\, F_p)$. \quad \textbf{Public key:} $h$.
+
+\subsection{Encryption}
+
+Bob represents his plaintext as $m(x) \in \R$ with coefficients in
+$\bigl[-\dfrac{p}{2},\, \dfrac{p}{2}\bigr]$.
+\begin{enumerate}
+    \item Choose a fresh random ephemeral polynomial $r(x) \in T(d, d)$.
+    \item Compute the \textbf{ciphertext}:
+          \[
+              e(x) \equiv p \cdot r(x) \star h(x) + m(x) \pmod{q}.
+          \]
+\end{enumerate}
+
+Because $r(x)$ is drawn fresh for each encryption, NTRU is a \textit{probabilistic} scheme: encrypting the same message twice yields completely different ciphertexts.
+
+\subsection{Decryption}
+
+Alice recovers $m(x)$ from $e(x)$ in three steps:
+\begin{enumerate}
+    \item Compute $a(x) \equiv f(x) \star e(x) \pmod{q}$.
+    \item \textbf{Center-lift:} adjust each coefficient of $a(x)$ to its
+          representative in $\bigl(-q/2,\, q/2\bigr]$.
+    \item Recover plaintext: $m(x) \equiv F_p(x) \star a(x) \pmod{p}$.
+\end{enumerate}
+
+\subsection{Correctness}\label{sec:correctness}
+
+\begin{theorem}[Decryption correctness]\label{thm:correctness}
+    If $q > (6d+1)p$, the decryption procedure recovers $m(x)$ exactly.
+\end{theorem}
+
+\begin{proof}
+Expanding $a(x)$ and substituting $h(x) = F_q(x) \star g(x)$:
+\begin{align*}
+    a(x) &\equiv f(x) \star e(x) \pmod{q} \\
+         &\equiv f(x) \star \bigl(p \cdot r(x) \star h(x) + m(x)\bigr) \pmod{q} \\
+         &\equiv p \cdot f(x) \star F_q(x) \star g(x) \star r(x)
+              + f(x) \star m(x) \pmod{q} \\
+         &\equiv p \cdot g(x) \star r(x) + f(x) \star m(x) \pmod{q},
+\end{align*}
+where the last step uses $f \star F_q \equiv 1 \pmod{q}$.\\
+
+The coefficients of $A(x) := p \cdot g \star r + f \star m$ in
+$\R$ (before reduction mod $q$) are now bounded. Since $g \in T(d,d)$ and $r \in T(d,d)$,
+each coefficient of $g \star r$ is at most $2d$ in absolute value. Since
+$f \in T(d+1,d)$ and the coefficients of $m$ are in
+$\bigl[-\dfrac{p}{2},\, \dfrac{p}{2}\bigr]$, each coefficient of
+$f \star m$ is at most $(2d+1)\dfrac{p}{2}$ in absolute value. Therefore:
+\[
+    |A_k| \le p \cdot 2d + (2d+1)\dfrac{p}{2} < (6d+1)\dfrac{p}{2} < \dfrac{q}{2}.
+\]
+Since every coefficient of $A(x)$ already lies in $(-q/2, q/2]$, the
+center-lift recovers $A(x)$ \textit{exactly} in $\R$ with no modular wrap-around:
+\[
+    a(x) = p \cdot g(x) \star r(x) + f(x) \star m(x).
+\]
+Reducing modulo $p$ kills the blinding term ($p \cdot g \star r \equiv 0 \pmod{p}$):
+\[
+    F_p \star a \equiv F_p \star f \star m \equiv m \pmod{p}. \qedhere
+\]
+\end{proof}
+
+\section{Worked Example}
+
+The full protocol is illustrated with the toy parameters $(N, p, q, d) = (7, 3, 41, 2)$.
+
+\subsection{Key Generation}
+
+Alice chooses:
+\[
+    f(x) = -1 + x^2 + x^3 - x^4 + x^6 \in T(3,2), \quad
+    g(x) = -x - x^2 + x^4 + x^6 \in T(2,2).
+\]
+
+Using the extended Euclidean algorithm she computes:
+\begin{align*}
+    F_p(x) &= f(x)^{-1} \pmod{3,\, x^7-1}
+            = 1 + x + x^2 + x^3 + 2x^5 + x^6, \\
+    F_q(x) &= f(x)^{-1} \pmod{41,\, x^7-1}
+            = 37 + 2x + 40x^2 + 21x^3 + 31x^4 + 26x^5 + 8x^6.
+\end{align*}
+
+The public key is:
+\[
+    h(x) = F_q(x) \star g(x) \pmod{41}
+         = 30 + 26x + 8x^2 + 38x^3 + 2x^4 + 40x^5 + 20x^6.
+\]
+
+\subsection{Encryption}
+
+Bob's plaintext and ephemeral key:
+\[
+    m(x) = -x^5 + x^3 + x^2 - x + 1, \qquad r(x) = x^6 - x^5 + x - 1.
+\]
+
+He computes the ciphertext $e(x) \equiv 3 \cdot r(x) \star h(x) + m(x) \pmod{41}$:
+\[
+    e(x) = 25 + 3x + 40x^2 + 2x^3 + 4x^4 + 19x^5 + 31x^6.
+\]
+
+\subsection{Decryption}
+
+\textbf{Step 1.} Multiply by $f(x)$ mod $41$:
+\[
+    f(x) \star e(x) \equiv 40 + x + 40x^2 + 40x^3 + 33x^4 + 10x^5 + x^6 \pmod{41}.
+\]
+
+\textbf{Step 2.} Center-lift to $(-20.5,\, 20.5]$ (e.g.\ $40 \mapsto -1$,
+$33 \mapsto -8$):
+\[
+    a(x) = -1 + x - x^2 - x^3 - 8x^4 + 10x^5 + x^6.
+\]
+
+\textbf{Step 3.} Multiply by $F_p(x)$ mod $3$:
+\[
+    F_p(x) \star a(x) \pmod{3} = -x^5 + x^3 + x^2 - x + 1 = m(x). \quad \checkmark
+\]
+
+\section{Security Analysis}\label{sec:security}
+
+\subsection{Key Recovery Problem}
+
+\begin{definition}[NTRU Key Recovery Problem]
+    Given the public key $h(x) \in \R_q$, find ternary polynomials $f(x)$ and
+    $g(x)$ such that $f(x) \star h(x) \equiv g(x) \pmod{q}$.
+\end{definition}
+
+Since $h = F_q \star g$, knowing $f$ immediately yields $g = f \star h \pmod q$
+(and vice versa). The difficulty of this problem is equivalent to finding a
+short vector in the \textbf{NTRU lattice}.
+
+\subsection{Brute Force and Meet-in-the-Middle}
+
+An attacker could exhaustively search over all $f \in T(d_1, d_2)$. The search
+space has size:
+\[
+    \binom{N}{d_1}\binom{N-1}{d_2} = \dfrac{N!}{d_1!\, d_2!\, (N-d_1-d_2)!}.
+\]
+Note that any of the $N$ cyclic rotations of a valid $f$ also decrypts
+correctly, so the effective search space is $\#T(d_1,d_2) / N$.
+
+\begin{example}[$(N, p, q, d) = (251, 3, 257, 83)$]
+    The search space for $f \in T(84, 83)$ is $\approx 2^{389}$
+    polynomials; accounting for $N = 251$ rotations gives roughly $2^{381.6}$
+    effective trials. A meet-in-the-middle (birthday) attack takes the square
+    root, requiring $\approx 2^{190.8}$ operations---still completely infeasible.
+\end{example}
+
+\section{Conclusion}
+
+NTRU is a mature, well-studied post-quantum cryptosystem. Its algebraic
+foundation in truncated polynomial rings provides a clean mathematical
+structure, and its reliance on lattice hardness gives resilience against both
+classical and quantum adversaries. Its combination of small key sizes, fast
+operations, and strong security evidence makes it one of the most practical
+post-quantum proposals available today.
+
+\bigskip
+\noindent\textit{This section forms part of a group report on Post-Quantum
+Cryptography. The initial content was developed from a presentation by
+Meghraj Goswami.}
+
+\begin{thebibliography}{9}
+
+    \bibitem{shor94}
+    P.W.~Shor. 
+    \textit{Algorithms for Quantum Computation: Discrete Logarithms and Factoring}. 
+    In: \textit{Proceedings of the 35th Annual IEEE Symposium on Foundations of Computer Science (FOCS)}, 1994, pp. 124--134. 
+    \url{https://doi.org/10.1109/SFCS.1994.365700}
+
+    \bibitem{ntru96}
+    J.~Hoffstein, J.~Pipher, and J.H.~Silverman. 
+    \textit{NTRU\: A Ring-Based Public Key Cryptosystem}. 
+    In: \textit{Algorithmic Number Theory (ANTS-III)}, LNCS 1423, Springer, 1998, pp. 267--288. 
+    \url{https://doi.org/10.1007/BFb0054868}
+
+    \bibitem{nistpqc}
+    \textit{NIST Post-Quantum Standardization Effort}.
+    \url{https://csrc.nist.gov/projects/post-quantum-cryptography}
+
+\end{thebibliography}
+
+\end{document}
