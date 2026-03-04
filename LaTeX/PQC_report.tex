@@ -45,8 +45,9 @@
     \vspace{0.8cm}
 
     \begin{tabular}{@{} l l l @{}}
+        \large \textbf{Shashwat Agrawal}  & \large -- & \large 2024ADPS0197H \\[4pt]
         \large \textbf{Meghraj Goswami} & \large -- & \large 2022A2B41869H \\[4pt]
-        \large \textbf{Add your names}  & \large -- & \large 202XYYZZ0000H \\
+        \large \textbf{Add your names}  & \large -- & \large 202XYYZZ0000H \\[4pt]
     \end{tabular}
     
     \vspace{1.2cm}
@@ -85,6 +86,128 @@
 \end{titlepage}
 \tableofcontents
 \newpage
+
+% --------------------------------------------------------------------
+
+\part{Applications of LLL to Cryptanalysis -- Shashwat Agrawal}
+
+\section{Overview}
+
+The Lenstra-Lenstra-Lovász (LLL) lattice basis reduction algorithm is a foundational tool in cryptanalysis. It has successfully compromised older knapsack-based public key cryptosystems and remains the primary analytical tool against modern lattice-based schemes, including Ajtai-Dwork, GGH, and NTRU. Furthermore, LLL can be leveraged to attack RSA under specific conditions. 
+
+It is important to note that the algorithmic examples outlined in this section use very low-dimensional lattices, allowing LLL to break them trivially. In practical deployments, ensuring security requires lattice dimensions between 500 and 1000, which (with the exception of NTRU) often results in impractically large key lengths.
+
+\section{Congruential Cryptosystems}
+
+In a standard congruential cipher, Alice selects a public modulus $q$ alongside two small secret integers, $f$ and $g$. The public key is broadcast as $h \equiv f^{-1}g \pmod{q}$. Eve's objective is to compute the private key $f$ knowing only $q$ and $h$.
+
+This can be mapped to a lattice problem. Eve constructs a lattice $L$ spanned by the vectors:
+\[
+    \mathbf{v}_1 = (1, h) \quad \text{and} \quad \mathbf{v}_2 = (0, q)
+\]
+Because the vector $(f, g)$ is a linear combination of this basis and is constrained to be small, it will likely represent the shortest nonzero vector in $L$.
+
+\subsection{Worked Example: Breaking the Congruential Cipher}
+
+\textbf{Problem Setup:} Let $q = 122430513841$ and $h = 39245579300$. How can an attacker recover the private keys $f$ and $g$?
+
+\textbf{Solution via LLL:}
+Eve generates the lattice from the vectors:
+\[
+    \mathbf{v}_1 = (1,\, 39245579300) \quad \text{and} \quad \mathbf{v}_2 = (0,\, 122430513841)
+\]
+Applying Gaussian lattice reduction (a 2D analog of LLL) takes exactly 11 iterations. The algorithm outputs a new, reduced basis containing much shorter vectors:
+\[
+    (-231231,\, -195698) \quad \text{and} \quad (-368222,\, 217835)
+\]
+The shortest vector in this reduced basis represents the secret variables. Ignoring the irrelevant change of sign, Eve successfully retrieves Alice's private keys:
+\[
+    f = 231231 \quad \text{and} \quad g = 195698
+\]
+
+\section{Knapsack (Subset-Sum) Problems}
+
+The knapsack problem defined by a set of weights $M = (m_1, \dots, m_n)$ and a target sum $S$ can similarly be framed as a lattice reduction task. By assembling a specific basis matrix, the target solution vector is embedded into the lattice $L_{M,S}$. Because this target vector has a length of $\sqrt{n}$, it is statistically likely to be about half the size of any other nonzero vector in the lattice, making it an ideal target for LLL.
+
+\subsection{Worked Example: Solving the Knapsack with LLL}
+
+\textbf{Problem Setup:} Consider the knapsack instance with weight vector $M = (89, 243, 212, 150, 245)$ and target sum $S = 546$. Find the specific combination of weights that sums exactly to $S$.
+
+\textbf{Solution via LLL:}
+We construct a basis matrix $A_{M,S}$ where the weights and target are aligned to form the lattice constraints:
+\[
+    A_{M,S} = 
+    \begin{pmatrix}
+    2 & 0 & 0 & 0 & 0 & 89 \\
+    0 & 2 & 0 & 0 & 0 & 243 \\
+    0 & 0 & 2 & 0 & 0 & 212 \\
+    0 & 0 & 0 & 2 & 0 & 150 \\
+    0 & 0 & 0 & 0 & 2 & 245 \\
+    1 & 1 & 1 & 1 & 1 & 546
+    \end{pmatrix}
+\]
+Applying the LLL algorithm to the rows of this matrix takes 21 swaps and outputs the following reduced basis matrix:
+\[
+    \begin{pmatrix}
+    -1 & 1 & -1 & 1 & -1 & 0 \\
+    1 & -1 & -1 & 1 & -1 & -1 \\
+    -1 & -1 & -1 & 1 & 1 & 2 \\
+    1 & -1 & -1 & -1 & -1 & 2 \\
+    -2 & -2 & 4 & 0 & -2 & 0 \\
+    -6 & -4 & -6 & -6 & 0 & -3
+    \end{pmatrix}
+\]
+The shortest vector in the reduced basis (the top row) is $\mathbf{v} = (-1, 1, -1, 1, -1, 0)$. 
+
+To find the subset-sum solution, we write $\mathbf{v}$ as a linear combination of the original basis vectors (the rows of $A_{M,S}$). This linear combination vector is $(-1, 0, -1, 0, -1, 1)$. This translates directly to the correct subset sum:
+\[
+    -89 - 212 - 245 + 546 = 0
+\]
+Thus, the items weighing 89, 212, and 245 are the ones that perfectly fill the knapsack.
+
+\textbf{Remark:} When using LLL to solve subset-sum problems, it is helpful to multiply $m_1, \dots, m_n$ and the target $S$ by a large constant $C$. This scales up the expected length of non-target shortest vectors by $C^{1/(n+1)}$, while the target vector's length remains $\sqrt{n}$. The larger distance between the target vector and the rest of the lattice makes it significantly easier for LLL to isolate the correct solution.
+
+\section{GGH Cryptosystem}
+
+The Goldreich-Goldwasser-Halevi (GGH) cryptosystem relies heavily on the difficulty of the Closest Vector Problem (CVP). Alice publishes a `bad' (highly non-orthogonal) basis for a lattice, and Bob encrypts a message into a vector $\mathbf{e}$ that is close to a lattice point.
+
+\subsection{Worked Example: Breaking GGH with Babai's Algorithm}
+
+\textbf{Problem Setup:} Alice's public lattice $L$ is generated by the rows of the following matrix (representing a bad basis):
+\[
+    \begin{pmatrix}
+    -4179163 & -1882253 & 583183 \\
+    -3184353 & -1434201 & 444361 \\
+    -5277320 & -2376852 & 736426
+    \end{pmatrix}
+\]
+Bob's encrypted message is the vector $\mathbf{e} = (-79081427,\, -35617462,\, 11035473)$. How can Eve find the plaintext message?
+
+\textbf{Solution via LLL:}
+Eve cannot effectively use Babai's algorithm on the bad public basis. First, she applies LLL to the lattice $L$ to find a quasi-orthogonal `good' basis:
+\[
+    \begin{pmatrix}
+    36 & -30 & -86 \\
+    61 & 11 & 67 \\
+    -10 & 102 & -40
+    \end{pmatrix}
+\]
+This new basis has a Hadamard ratio of $H = 0.956083$, meaning it is highly orthogonal. Next, Eve applies Babai's algorithm to find a lattice vector $\mathbf{v}$ that is extremely close to the intercepted ciphertext $\mathbf{e}$. Babai's algorithm returns:
+\[
+    \mathbf{v} = (79081423,\, 35617459,\, -11035471)
+\]
+Finally, she writes $\mathbf{v}$ in terms of the original good basis vectors, which immediately retrieves Bob's plaintext:
+\[
+    \mathbf{m} = (-86,\, 35,\, 32)
+\]
+
+\section{Conclusion}
+
+The LLL algorithm has profoundly shaped the landscape of modern cryptography. As demonstrated by its attacks on Congruential, Knapsack, and GGH systems, translating cryptographic parameters into lattice basis vectors allows cryptanalysts to exploit the mathematical predictability of short vectors. While increasing lattice dimensions to 500 or 1000 can safeguard systems against LLL, doing so often introduces severe inefficiencies in key size. This reality underscores why cryptosystems must be evaluated not just for theoretical soundness, but for resilience against practical lattice basis reduction.
+
+\newpage
+
+% --------------------------------------------------------------------
 
 \part{NTRU Cryptosystem -- Meghraj Goswami}
 
