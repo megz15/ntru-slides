@@ -5,6 +5,7 @@
 \usepackage{hyperref}
 \usepackage{fancyhdr}
 \usepackage{graphicx}
+\usepackage{tikz}
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
@@ -28,7 +29,7 @@
 \begin{document}
 \begin{titlepage}
     \centering
-    \vspace*{1.5cm}
+    % \vspace*{1.5cm}
     \large A Mid-Semester Report On
     \vspace{0.5cm}
 
@@ -48,6 +49,10 @@
         \large \textbf{Shashwat Agrawal}  & \large -- & \large 2024ADPS0197H \\[4pt]
         \large \textbf{Meghraj Goswami} & \large -- & \large 2022A2B41869H \\[4pt]
         \large \textbf{R Revanth Kanna} & \large -- & \large 2022B4AA0926H \\[4pt]
+        \large \textbf{Soham Patil} & \large -- & \large 2022B4A30960H \\[4pt]
+        \large \textbf{Prashanth Swaminathan} & \large -- & \large ID \\[4pt]
+        \large \textbf{Shreya Bhaskar} & \large -- & \large ID \\[4pt]
+        \large \textbf{Other Names} & \large -- & \large IDs \\[4pt]
     \end{tabular}
     
     \vspace{1.2cm}
@@ -84,12 +89,39 @@
     (March 2026)
 
 \end{titlepage}
+
+\begin{abstract}
+Quantum computing is moving at a rapid pace and it is starting to break the classical public-key cryptography we use now. Problems like integer factorization and discrete logarithms, which used to be hard, are becoming easier for quantum computers. That is why Post-Quantum Cryptography (PQC) is garnering a lot of attention. Lattice-based methods are a huge part of PQC because they rely on high level math problems that quantum computers struggle with.\\
+
+This project dives into lattice theory and how to reduce lattice bases. It focuses on the LLL algorithm, created by Arjen Lenstra, Hendrik Lenstra, and László Lovász, and also the more complex BKZ algorithm. The project explains what lattices are mathematically, how Gram-Schmidt orthogonalization works, what size reduction means and the Lovász condition. It encompasses step-by-step algorithm details and examples to make it clearer.\\
+
+We then examine how these reduction methods apply to hard problems such as the Shortest Vector Problem (SVP) and the Closest Vector Problem (CVP), which are central to lattice cryptanalysis. Overall, this project highlights the mathematical foundations and cryptographic importance of lattice reduction in the context of post-quantum security.
+\end{abstract}
+
+\newpage
+
+\section*{Acknowledgements}
+
+I would like to extend my sincere gratitude to all those who guided and supported me throughout this project. First, I sincerely thank my project mentor,
+Prof.\ Sabyasachi Dey, for his constant guidance, support, and valuable feedback, which were instrumental in the successful completion of this work. I also thank the Department of Mathematics, BITS Pilani Hyderabad Campus, for providing the necessary resources and insights. I extend my heartfelt thanks to my fellow project teammates
+for their dedication, teamwork, and collaboration at every stage. Finally, I am profoundly grateful to my family and friends for their encouragement and patience throughout.
+
+\newpage
 \tableofcontents
+\newpage
+
+\section{Literature Review -- Shreya Bhaskar}
+
+Lattice theory is a significant area in computational mathematics and modern cryptography. To build post-quantum cryptography, we need to solve many hard geometric problems in lattices, such as Shortest Vector Problem (SVP) and Closest Vector Problem (CVP). Interestingly, these problems are considered to be hard even for quantum computers.
+The LLL algorithm for lattice basis reduction was introduced by Arjen Lenstra, Hendrik Lenstra and László Lovász in 1982. The first polynomial time algorithm for producing a reduced lattice basis with guaranteed optimality, the LLL algorithm is based on the Gram-Schmidt procedure, the size-reduction algorithm and the Lovász condition to produce a basis with short, almost orthogonal vectors. It has been widely used in number theory, cryptanalysis, integer programming and coding theory. While the LLL algorithm is considered efficient, its reduction strength is moderate, which makes it more applicable to approximating SVP instances.
+The Block Korkine-Zolotarev (BKZ) algorithm is a method for achieving stronger reductions from the approximate Shortest Vector Problem (SVP) than the original LLL algorithm. The BKZ algorithm reduces lattice vectors in blocks and attempts to solve the SVP locally in each block. Increasing the block size generally leads to better reduction efficiency, but the running time increases exponentially. The BKZ algorithm has been used in the majority of lattice cryptanalysis results against lattice-based cryptographic schemes, and is a common tool for assessing the security of lattice-based cryptography.
+So far, a number of works have demonstrated that lattice basis reduction algorithms can be used for both theoretical and cryptographic purposes. In this work, we examine in greater detail two of the most widely used reduction algorithms in the lattice reduction literature, LLL and BKZ, in order to gain insight into the time complexity reduction trade-offs and the resulting security implications for certain post-quantum cryptographic proposals based on lattices.
+
 \newpage
 
 % --------------------------------------------------------------------
 
-\part{Basics of a Lattice -- R Revanth Kanna}
+\part{Basics of a Lattice -- R Revanth Kanna and Soham Patil}
 
 \section{Introduction to Lattices}
 
@@ -144,6 +176,311 @@ Suppose that $L_{1}\subseteq L_{2}$. Then $vol(L_{1})\ge vol(L_{2})$.
 Let $B_{1}$ be a basis for $L_{1}$ and $B_{2}$ be a basis for $L_{2}$. Because $L_{1}\subseteq L_{2}$, the basis vectors of $B_{1}$ must belong to $L_{2}$. Therefore, there exists an integer matrix $M$ such that $B_{1}=B_{2}M$. The volume of $L_{1}$ is $vol(L_{1}) = |\det(B_{1})| = |\det(B_{2}M)| = |\det(B_{2})||\det(M)|$. This simplifies to $vol(L_{2})|\det(M)|$. Because $M$ is an integer matrix for full-rank lattices, its determinant is a non-zero integer, meaning $|\det(M)| \ge 1$. Consequently, $vol(L_{1}) \ge vol(L_{2})$.
 \end{proof}
 
+\vspace{0.5cm}
+
+\subsection*{1.7 \quad Shortest Vector Problem (SVP)}
+
+\noindent \textbf{Definition 1.2.} \textit{Given a lattice $L$, find a nonzero $v \in L$ minimizing the Euclidean norm $\|v\|_2$.}
+
+\vspace{0.3cm}
+The length of the shortest non-zero vector is denoted by the first successive minimum:
+\[
+\lambda_1(L) = \min_{v \in L\setminus\{0\}} \|v\|_2
+\]
+
+Exact SVP is known to be NP-hard under randomized reductions in high dimensions. In cryptography, we typically rely on the Approximate SVP ($\text{SVP}_\gamma$), where the goal is to find a vector $v$ such that $\|v\| \leq \gamma \cdot \lambda_1(L)$ for a given approximation factor $\gamma$.
+
+\vspace{0.5cm}
+
+\subsection*{1.8 \quad Closest Vector Problem (CVP)}
+
+\noindent \textbf{Definition 1.3.} \textit{Given a target vector $t \in \mathbb{R}^n$ that is not necessarily in $L$, find a lattice vector $v \in L$ that minimizes the distance $\|t - v\|_2$.}
+
+\vspace{0.3cm}
+Mathematically, this means finding $v \in L$ such that $\|t - v\| \leq \|t - w\|$ for all $w \in L$. CVP models the decoding of noisy messages: if $t = mB + e$ for a small error $e$, finding the closest lattice point recovers $mB$ and removes the error. Like SVP, exact CVP is NP-hard.
+
+\vspace{0.5cm}
+
+\subsection*{1.9 \quad Hermite's Theorem}
+
+\noindent \textbf{Theorem 1.4.} \textit{For an $n$-dimensional lattice $L$, there exists a constant $\gamma_n$ (Hermite's constant) such that:}
+\[
+\lambda_1(L)^2 \leq \gamma_n (\text{vol}(L))^{2/n}.
+\]
+
+\vspace{0.3cm}
+This theorem guarantees a universal upper bound on the length of the shortest vector in terms of the lattice's volume. While the exact value of $\gamma_n$ is only known for small dimensions, it scales linearly with $n$, ensuring short vectors mathematically exist even if finding them computationally is difficult.
+
+\vspace{0.5cm}
+
+\subsection*{1.10 \quad Minkowski's Theorem}
+
+\noindent \textbf{Theorem 1.5.} \textit{Let $L$ be a lattice in $\mathbb{R}^n$ and $S$ a symmetric convex body. If}
+\[
+\text{vol}(S) > 2^n\text{vol}(L)
+\]
+\textit{then $S$ contains a nonzero lattice point.}
+
+\vspace{0.3cm}
+This converts volume information into the existence of lattice points. By applying this theorem to an $n$-dimensional hypersphere, Minkowski established a direct bound on the shortest vector: $\lambda_1(L) \leq \sqrt{n}(\text{vol}(L))^{1/n}$.
+
+\newpage
+
+% --------------------------------------------------------------------
+
+\part{Lattice Basis Reduction -- Prashanth Swaminathan}
+
+\section{Introduction}
+
+A lattice is a discrete subset of $\mathbb{R}^n$ generated by integer linear combinations of linearly independent vectors. If $b_1, b_2, \dots, b_n$ are basis vectors, the lattice generated by them is
+
+\[
+L = \{a_1b_1 + a_2b_2 + \dots + a_nb_n \mid a_i \in \mathbb{Z}\}.
+\]
+
+A lattice can have infinitely many different bases. Some bases contain long and nearly parallel vectors. Others contain shorter vectors that are closer to orthogonal. Lattice basis reduction algorithms transform an arbitrary basis into a reduced basis containing shorter and more orthogonal vectors.
+
+\subsection{Why do we need Lattice Basis Reduction Methods}
+
+Many computational problems produce lattice bases that are poorly conditioned. Long vectors that are nearly linearly dependent make calculations inefficient and obscure the structure of the lattice.
+
+Basis reduction improves the basis quality by shortening the vectors and reducing their mutual angles. This makes it easier to analyze the geometry of the lattice.
+
+These techniques are widely used in cryptanalysis, integer programming, number theory, and coding theory. In particular, they are important for approximating difficult lattice problems such as the Shortest Vector Problem (SVP) and the Closest Vector Problem (CVP).
+
+%--------------------------------------------------
+\section{LLL}
+
+\subsection{History and Development of LLL}
+
+The LLL algorithm was introduced in 1982 by Arjen Lenstra, Hendrik Lenstra, and László Lovász. It was the first polynomial-time algorithm capable of computing a reduced lattice basis with provable guarantees.
+
+The algorithm quickly became a fundamental tool in computational mathematics and cryptography. It has applications in polynomial factorization, solving Diophantine equations, and analyzing cryptographic constructions.
+
+%--------------------------------------------------
+\subsection{Mathematical Formulation of LLL}
+
+Let $B=(b_1,b_2,\dots,b_n)$ be a lattice basis in $\mathbb{R}^m$.
+
+Using Gram-Schmidt orthogonalization we compute vectors
+
+\[
+b_1^*,b_2^*,\dots,b_n^*
+\]
+
+and coefficients
+
+\[
+\mu_{i,j}=\frac{\langle b_i,b_j^*\rangle}{\langle b_j^*,b_j^*\rangle}, \quad j<i
+\]
+
+The LLL reduction satisfies two conditions.
+
+\textbf{Size Reduction}
+
+\[
+|\mu_{i,j}| \le \frac{1}{2}, \quad j<i
+\]
+
+\textbf{Lovász Condition}
+
+\[
+\delta ||b_{k-1}^*||^2 \le ||b_k^*+\mu_{k,k-1}b_{k-1}^*||^2
+\]
+
+where
+
+\[
+\frac{1}{4} < \delta < 1
+\]
+
+and commonly $\delta = 3/4$.
+
+%--------------------------------------------------
+\subsection{Algorithm for Applying LLL}
+
+\begin{enumerate}
+
+\item Compute the Gram-Schmidt orthogonalization of the basis vectors.
+
+\item Perform size reduction
+
+\[
+b_i = b_i - \text{round}(\mu_{i,j})b_j
+\]
+
+until $|\mu_{i,j}| \le \frac{1}{2}$.
+
+\item Check the Lovász condition.
+
+\item If the condition holds, move to the next vector.
+
+\item If the condition fails, swap $b_k$ and $b_{k-1}$.
+
+\item Recompute Gram-Schmidt coefficients and repeat until the basis is reduced.
+
+\end{enumerate}
+
+%--------------------------------------------------
+\subsection{Standard Solved Example}
+
+Consider the lattice basis
+
+\[
+b_1=(1,1,1), \quad b_2=(-1,0,2), \quad b_3=(3,5,6)
+\]
+
+\textbf{Step 1: Gram-Schmidt Orthogonalization}
+
+\[
+b_1^* = b_1 = (1,1,1)
+\]
+
+Compute
+
+\[
+\mu_{2,1}=\frac{b_2\cdot b_1^*}{b_1^*\cdot b_1^*}
+\]
+
+\[
+b_2\cdot b_1^* = (-1)(1)+0(1)+2(1)=1
+\]
+
+\[
+b_1^*\cdot b_1^*=3
+\]
+
+\[
+\mu_{2,1}=\frac{1}{3}
+\]
+
+Thus
+
+\[
+b_2^* = b_2-\mu_{2,1}b_1^*
+\]
+
+\[
+b_2^*=(-1,0,2)-\frac13(1,1,1)
+\]
+
+\[
+b_2^*=(-\tfrac43,-\tfrac13,\tfrac53)
+\]
+
+Next compute
+
+\[
+\mu_{3,1}=\frac{b_3\cdot b_1^*}{b_1^*\cdot b_1^*}
+\]
+
+\[
+b_3\cdot b_1^* = 3+5+6=14
+\]
+
+\[
+\mu_{3,1}=\frac{14}{3}
+\]
+
+Similarly
+
+\[
+\mu_{3,2}=\frac{b_3\cdot b_2^*}{b_2^*\cdot b_2^*}
+\]
+
+After computing these coefficients, the algorithm performs size reduction and checks the Lovász condition. If the Lovász condition is violated, the vectors are swapped and the process repeats until a reduced basis is obtained.
+
+The resulting reduced basis consists of shorter vectors that are closer to orthogonal than the original basis.
+
+%--------------------------------------------------
+\section{BKZ}
+
+\subsection{What is BKZ}
+
+BKZ (Block Korkine-Zolotarev) is an extension of the LLL algorithm that performs reduction on blocks of vectors instead of single vectors.
+
+The algorithm was developed to produce stronger lattice reductions. It is widely used in modern lattice cryptanalysis and security evaluation of lattice-based cryptography.
+
+%--------------------------------------------------
+\subsection{Mathematical Formulation of BKZ}
+
+Let $B=(b_1,b_2,\dots,b_n)$ be a lattice basis.
+
+BKZ works with a block size $\beta$.
+
+For each block
+
+\[
+(b_i,b_{i+1},\dots,b_{i+\beta-1})
+\]
+
+the algorithm attempts to solve the Shortest Vector Problem in the projected lattice defined by that block.
+
+A shorter vector found within the block replaces part of the basis, and the entire basis is LLL-reduced again.
+
+Increasing the block size improves reduction quality but significantly increases computation time.
+
+%--------------------------------------------------
+\subsection{Algorithm for Applying BKZ}
+
+\begin{enumerate}
+
+\item Begin with an LLL-reduced basis.
+
+\item Select a block size $\beta$.
+
+\item For each block of $\beta$ vectors, construct the projected lattice.
+
+\item Attempt to solve the Shortest Vector Problem in that block.
+
+\item Insert the resulting short vector into the basis.
+
+\item Apply LLL reduction again.
+
+\item Repeat until no further improvement occurs.
+
+\end{enumerate}
+
+%--------------------------------------------------
+\subsection{Comparison with LLL}
+
+The LLL algorithm runs in polynomial time and is computationally efficient. However, the quality of the reduced basis is moderate.
+
+BKZ produces significantly shorter vectors by solving local shortest vector problems within blocks. This produces stronger reductions and is more effective for difficult lattice problems.
+
+The main drawback of BKZ is computational cost. As the block size increases, the algorithm becomes much slower.
+
+In practical cryptanalysis, LLL is often used as a preprocessing step, while BKZ is applied when stronger reductions are required.
+
+%--------------------------------------------------
+\subsection*{Illustration of BKZ Block Processing}
+
+\begin{center}
+\begin{tikzpicture}[scale=1]
+
+\draw[thick] (0,0) rectangle (8,1);
+
+\foreach \x in {1,2,3,4,5,6,7}
+\draw (\x,0) -- (\x,1);
+
+\node at (0.5,0.5) {$b_1$};
+\node at (1.5,0.5) {$b_2$};
+\node at (2.5,0.5) {$b_3$};
+\node at (3.5,0.5) {$b_4$};
+\node at (4.5,0.5) {$b_5$};
+\node at (5.5,0.5) {$b_6$};
+\node at (6.5,0.5) {$b_7$};
+\node at (7.5,0.5) {$b_8$};
+
+\draw[red, thick] (2,0) rectangle (5,1);
+
+\node[red] at (3.5,1.3) {Block of size $\beta$};
+
+\end{tikzpicture}
+\end{center}
+
+The highlighted region represents the block on which the algorithm performs stronger reduction before sliding the block forward along the basis.
+
 \newpage
 
 % --------------------------------------------------------------------
@@ -152,9 +489,9 @@ Let $B_{1}$ be a basis for $L_{1}$ and $B_{2}$ be a basis for $L_{2}$. Because $
 
 \section{Overview}
 
-The Lenstra-Lenstra-Lovász (LLL) lattice basis reduction algorithm is a foundational tool in cryptanalysis. It has successfully compromised older knapsack-based public key cryptosystems and remains the primary analytical tool against modern lattice-based schemes, including Ajtai-Dwork, GGH, and NTRU. Furthermore, LLL can be leveraged to attack RSA under specific conditions. 
+The LLL(Lenstra Lenstra Lovez) is a major tool in cryptography. It has broken older system like the knapsack system. It is also the primary tool for the modern systems such as GGH and NTRU. Further, the LLL can also be used to attack the RSA crypto system under certain defined conditions.
 
-It is important to note that the algorithmic examples outlined in this section use very low-dimensional lattices, allowing LLL to break them trivially. In practical deployments, ensuring security requires lattice dimensions between 500 and 1000, which (with the exception of NTRU) often results in impractically large key lengths.
+In the following examples lower dimension matrices have been used for illustrative purposes and better explanation. In practical basis higher dimension matrices are used for security purposes.
 
 \section{Congruential Cryptosystems}
 
@@ -186,7 +523,7 @@ The shortest vector in this reduced basis represents the secret variables. Ignor
 
 \section{Knapsack (Subset-Sum) Problems}
 
-The knapsack problem defined by a set of weights $M = (m_1, \dots, m_n)$ and a target sum $S$ can similarly be framed as a lattice reduction task. By assembling a specific basis matrix, the target solution vector is embedded into the lattice $L_{M,S}$. Because this target vector has a length of $\sqrt{n}$, it is statistically likely to be about half the size of any other nonzero vector in the lattice, making it an ideal target for LLL.
+The knapsack problem defined by a set of weights $M = (m_1, \dots, m_n)$ and a target sum $S$ can be made easier by turning it into a LLL problem. By assembling a specific basis matrix, the target solution vector is embedded into the lattice $L_{M,S}$. We will be using a very unique matrix to solve the problem. Different types of matrices can be introduced, the main aim is to turn the knapsack problem to a LLL problem.
 
 \subsection{Worked Example: Solving the Knapsack with LLL}
 
@@ -228,7 +565,7 @@ Thus, the items weighing 89, 212, and 245 are the ones that perfectly fill the k
 
 \section{GGH Cryptosystem}
 
-The Goldreich-Goldwasser-Halevi (GGH) cryptosystem relies heavily on the difficulty of the Closest Vector Problem (CVP). Alice publishes a `bad' (highly non-orthogonal) basis for a lattice, and Bob encrypts a message into a vector $\mathbf{e}$ that is close to a lattice point.
+This is the most basic cryptosystem to understand what exactly it means, to convert a bad basis to a good basis. In earlier sections, we had to convert the problem first to an  LLL problem, then solve it. Now the problem is already given in the matrix form and is ready to solve.
 
 \subsection{Worked Example: Breaking GGH with Babai's Algorithm}
 
@@ -243,7 +580,7 @@ The Goldreich-Goldwasser-Halevi (GGH) cryptosystem relies heavily on the difficu
 Bob's encrypted message is the vector $\mathbf{e} = (-79081427,\, -35617462,\, 11035473)$. How can Eve find the plaintext message?
 
 \textbf{Solution via LLL:}
-Eve cannot effectively use Babai's algorithm on the bad public basis. First, she applies LLL to the lattice $L$ to find a quasi-orthogonal `good' basis:
+Eve cannot effectively use Babai's algorithm on the bad public basis. First, she applies LLL to the lattice $L$ to find a quasi-orthogonal "good" basis:
 \[
     \begin{pmatrix}
     36 & -30 & -86 \\
@@ -262,7 +599,7 @@ Finally, she writes $\mathbf{v}$ in terms of the original good basis vectors, wh
 
 \section{Conclusion}
 
-The LLL algorithm has profoundly shaped the landscape of modern cryptography. As demonstrated by its attacks on Congruential, Knapsack, and GGH systems, translating cryptographic parameters into lattice basis vectors allows cryptanalysts to exploit the mathematical predictability of short vectors. While increasing lattice dimensions to 500 or 1000 can safeguard systems against LLL, doing so often introduces severe inefficiencies in key size. This reality underscores why cryptosystems must be evaluated not just for theoretical soundness, but for resilience against practical lattice basis reduction.
+The LLL algorithm was a major breakthrough in the world of cryptography. As seen in the exmaples it can easily break the knapsack, GGH and congruential cryptosystems. Even though it might be ineffective if the dimension sizes of the matrix are increased. But increasing the dimensions after a limit may make the system itself inefficient. Future cryptosystems are made keeping in mind there security against the LLL system.
 
 \newpage
 
@@ -613,6 +950,36 @@ classical and quantum adversaries. Its combination of small key sizes, fast
 operations, and strong security evidence makes it one of the most practical
 post-quantum proposals available today.
 
+\section{Future Scope of Work}
+
+This project mostly looks at the theory behind LLL and BKZ algorithms and how they work. Several directions remain open for future investigation.
+
+\begin{enumerate}
+    \item \textbf{Stronger reduction methods.} Exploring larger block sizes and
+          improved heuristics for BKZ could yield faster approximate SVP solvers
+          and better practical reduction efficiency.
+
+    \item \textbf{Implementation and experimentation.} Optimized software
+          implementations of LLL and BKZ, benchmarked on higher-dimensional
+          lattices, would provide concrete data on real-world performance.
+
+    \item \textbf{Impact on cryptographic security parameters.} A deeper study of
+          how reduction quality affects the security levels of structured lattices
+          used in current PQC schemes is particularly relevant.
+
+    \item \textbf{Alignment with NIST PQC standards.} Extending this work to the
+          lattice-based schemes recently standardized by NIST would make the
+          analysis directly applicable to real-world deployments.
+
+    \item \textbf{Quantum resistance.} Investigating how well lattice problems
+          withstand quantum attacks, and deriving tighter security proofs for
+          practical cryptographic constructions, remains an important open problem.
+\end{enumerate}
+
+Pushing this work beyond theory into implementation, cryptanalysis, and standardized
+PQC schemes would contribute meaningfully to the broader goal of securing
+communication in the post-quantum era.
+
 \begin{thebibliography}{9}
 
     \bibitem{shor94}
@@ -630,6 +997,11 @@ post-quantum proposals available today.
     \bibitem{nistpqc}
     \textit{NIST Post-Quantum Standardization Effort}.
     \url{https://csrc.nist.gov/projects/post-quantum-cryptography}
+
+    \bibitem{menezes}
+    A.~Menezes.
+    \textit{Lattice-Based Cryptography}.
+    \url{https://cryptography101.ca/lattice-based-cryptography/}
 
 \end{thebibliography}
 
